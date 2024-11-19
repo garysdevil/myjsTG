@@ -9,7 +9,7 @@ import json
 import time
 import random
 
-from myjsTG.utils.data import get_extracted_data
+from utils.gdata import get_extracted_data
 from config import ginit
 
 # 主函数

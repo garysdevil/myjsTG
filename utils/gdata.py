@@ -4,28 +4,28 @@ def extract_data(line):
     """
     从每一行提取 phone, code_url, proxy 信息，并格式化 Proxy
     """
-    # 空格作为分隔符进行切割
     parts = line.split()
 
-    # 具体的字段
+    # 检查基本字段数量是否符合要求
+    if len(parts) < 2:
+        print("分割后的结果不足2个部分, 检查输入数据。")
+        return None
+
+    phone = parts[0]
+    code_url = parts[1]
+    proxy = None  # 默认值为 None
+
+    # 如果提供了代理信息，尝试解析
     if len(parts) >= 3:
-        phone = parts[0]
-        code_url = parts[1]
         proxy_raw = parts[2]
-        
-        # 格式化 Proxy
         proxy_parts = proxy_raw.split(':')
         if len(proxy_parts) == 4:
             host, port, username, password = proxy_parts
             proxy = f"socks5://{username}:{password}@{host}:{port}"
         else:
             print(f"Proxy 格式不正确: {proxy_raw}")
-            return None
 
-        return {"phone": phone, "code_url": code_url, "proxy": proxy}
-    else:
-        print("分割后的结果不足3个部分, 检查输入数据。")
-        return None
+    return {"phone": phone, "code_url": code_url, "proxy": proxy}
 
 def process_file(file_path):
     """
