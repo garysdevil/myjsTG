@@ -8,7 +8,7 @@ mkdir local
 vi local/data.txt
 
 # 保存TG账号的key
-python login.py --start-line 1 --end-line 1
+python login.py --start-line 1 --end-line 1 --data-file local/data.txt --key-folder local/keys
 ```
 
 
