@@ -2,8 +2,9 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 import asyncio
 
-from config import ginit
-import utils.gtelethon as gtelethon
+from gconfig import ginit
+import gtele.gfuncs as gfuncs
+import gtele.gjoingroup as gjoingroup
 
 # 主函数
 async def main():
@@ -28,14 +29,14 @@ async def main():
         await client.connect()
         # 验证是否成功登录
         me = await client.get_me()
-        # print(f"登录成功! 账户名称: {me.username}, 用户 ID: {me.id}")
+        print(f"登录成功! 账户名称: {me.username}, 用户 ID: {me.id}")
 
-        auth_dict = await gtelethon.list_authorizations(client)  # 获取所有授权设备
-        auth_id_to_kick = auth_dict[1]  # 假设要踢掉第二个设备
-        await gtelethon.kick_authorization(client, auth_id_to_kick)  # 调用提取的函数
+        auth_dict = await gfuncs.list_authorizations(client)  # 获取所有授权设备
+        auth_id_to_kick = auth_dict[10]  # 假设要踢掉第二个设备
+        await gfuncs.kick_authorization(client, auth_id_to_kick)  # 调用提取的函数
 
         # await gtelethon.send_message_to_group(client, "群名", "现在有什么密码吗")
-        # await joingroup.join_group_and_verify(client, '群邀请链接')
+        # await gjoingroup.join_group_and_verify(client, '群邀请链接')
 
     finally:
         await client.disconnect()

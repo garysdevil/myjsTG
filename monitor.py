@@ -4,7 +4,7 @@ import asyncio
 import re
 import os
 
-import myjsTG.config.ginit as ginit
+import gconfig.ginit as ginit
 
 # 主函数
 async def main():

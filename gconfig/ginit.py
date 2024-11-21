@@ -2,7 +2,7 @@ import configparser
 
 def config():
     config = configparser.ConfigParser()
-    config.read('config/local.config.ini')
+    config.read('gconfig/local.config.ini')
 
     proxy = {
         'proxy_type': config['proxy']['proxy_type'],  # 'http' or 'socks5'

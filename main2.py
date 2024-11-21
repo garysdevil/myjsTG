@@ -7,8 +7,8 @@ from opentele.tl import TelegramClient
 from opentele.api import API, UseCurrentSession, CreateNewSession
 import asyncio
 
-import myjsTG.utils.gutils as gutils
-import myjsTG.config.ginit as ginit
+import gutils.gutils as gutils
+import gconfig.ginit as ginit
 
 
 async def main():

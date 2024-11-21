@@ -10,8 +10,8 @@ import json
 import time
 import random
 
-from utils.gdata import get_extracted_data
-from config import ginit
+from gutils.gdata import get_extracted_data
+from gconfig import ginit
 
 # 主函数
 async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1, end_line=None):
@@ -44,7 +44,7 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
         await login(api_id, api_hash, phone, password, key_folder, code_url, proxy)
         
         # 添加随机延时 3～6 秒
-        delay = random.uniform(3, 6)
+        delay = random.uniform(2, 5)
         print(f"操作完成，延时 {delay:.2f} 秒后继续...")
         time.sleep(delay)
 
@@ -110,7 +110,8 @@ async def login_to_telegram(client, phone, code_url, password, proxy=None):
         await client.send_code_request(phone)
 
         # 获取验证码并尝试登录
-        print(f"尝试从 {code_url} 获取验证码...")
+        print(f"延迟1秒钟后，尝试从 {code_url} 获取验证码...")
+        time.sleep(1)
         code = get_code_from_url(code_url, proxy)
         if code:
             # 使用验证码进行登录
