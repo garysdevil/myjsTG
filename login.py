@@ -12,10 +12,10 @@ import random
 
 from gutils.gdata import get_extracted_data
 from gconfig import ginit
+from log import logging, error_logger  # 引入日志模块
 
 # 主函数
 async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1, end_line=None):
-
     # 获取提取的数据
     extracted_data = json.loads(get_extracted_data(data_file))
 
@@ -31,21 +31,21 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
             continue  # 跳过起始行号之前的行
         
         if end_line and idx > end_line:
-            print(f"已达到终止行号 {end_line}，停止处理。")
+            logging.info(f"已达到终止行号 {end_line}，停止处理。")
             break  # 如果当前行号超过终止行号，则结束循环
         
         phone = item["phone"]
         code_url = item["code_url"]
         proxy = item["proxy"]
 
-        print(f"\n[{idx}] 正在处理账号: {phone}，使用代理: {proxy}")
+        logging.info(f"\n[{idx}] 正在处理账号: {phone}，使用代理: {proxy}")
         
         # 调用登录逻辑
         await login(api_id, api_hash, phone, password, key_folder, code_url, proxy)
         
         # 添加随机延时 3～6 秒
         delay = random.uniform(2, 5)
-        print(f"操作完成，延时 {delay:.2f} 秒后继续...")
+        logging.info(f"操作完成，延时 {delay:.2f} 秒后继续...")
         time.sleep(delay)
 
 # 设置代理（如果传递代理参数）
@@ -79,9 +79,9 @@ def get_code_from_url(url, proxy=None):
             data = response.json()
             return data.get("code")
         else:
-            print(f"请求验证码失败，状态码: {response.status_code}")
+            logging.warning(f"请求验证码失败，状态码: {response.status_code}")
     except Exception as e:
-        print(f"获取验证码时出错: {e}")
+        error_logger.error(f"获取验证码时出错: {e}")
     return None
 
 
@@ -106,31 +106,31 @@ async def login_to_telegram(client, phone, code_url, password, proxy=None):
     使用验证码登录 Telegram，并处理两步验证，支持代理
     """
     if not await client.is_user_authorized():
-        print(f"发送验证码请求到 {phone} ...")
+        logging.info(f"发送验证码请求到 {phone} ...")
         await client.send_code_request(phone)
 
         # 获取验证码并尝试登录
-        print(f"延迟1秒钟后，尝试从 {code_url} 获取验证码...")
+        logging.info(f"延迟1秒钟后，尝试从 {code_url} 获取验证码...")
         time.sleep(1)
         code = get_code_from_url(code_url, proxy)
         if code:
             # 使用验证码进行登录
-            print(f"使用验证码 {code} 登录...")
+            logging.info(f"使用验证码 {code} 登录...")
             try:
                 await client.sign_in(phone=phone, code=code)  # 尝试使用验证码登录
             except SessionPasswordNeededError:
                 if password:
-                    print("两步验证启用，尝试使用密码登录...")
+                    logging.info("两步验证启用，尝试使用密码登录...")
                     await client.sign_in(password=password)  # 提供两步验证密码
                 else:
-                    print("两步验证密码未提供，登录失败。")
+                    error_logger.error("两步验证密码未提供，登录失败。")
                     return
 
         else:
-            print("未获取到验证码，登录中止。")
+            error_logger.error("未获取到验证码，登录中止。")
             return False
     else:
-        print("用户已经授权，无需重新登录。")
+        logging.info("用户已经授权，无需重新登录。")
     return True
 
 # 保存 Session 到文件
@@ -140,8 +140,8 @@ def save_session_to_file(client, session_file):
     """
     with open(session_file, 'w') as f:
         f.write(client.session.save())
-    print(f"Session 已保存到文件: {session_file}")
-    print("保留好这个 session 字符串, 下次登录可以直接用这个字符串登录, 无需输入手机号和密码: \n", client.session.save())
+    logging.info(f"Session 已保存到文件: {session_file}")
+    logging.info("保留好这个 session 字符串, 下次登录可以直接用这个字符串登录, 无需输入手机号和密码: \n", client.session.save())
 
 # 登录逻辑
 async def login(api_id, api_hash, phone, password, key_folder, code_url, proxy=None):
