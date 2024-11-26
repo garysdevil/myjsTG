@@ -24,6 +24,7 @@ def extract_data(line):
             proxy = f"socks5://{username}:{password}@{host}:{port}"
         else:
             print(f"Proxy 格式不正确: {proxy_raw}")
+            exit()
 
     return {"phone": phone, "code_url": code_url, "proxy": proxy}
 
