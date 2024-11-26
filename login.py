@@ -101,7 +101,7 @@ def get_session_file_path(key_folder, phone):
     return os.path.join(key_folder, f"{phone}.session")
 
 # 登录 Telegram 客户端
-async def login_to_telegram(client, phone, code_url, password, proxy=None):
+async def login_to_telegram(client: TelegramClient, phone, code_url, password, proxy=None):
     """
     使用验证码登录 Telegram，并处理两步验证，支持代理
     """
@@ -134,14 +134,14 @@ async def login_to_telegram(client, phone, code_url, password, proxy=None):
     return True
 
 # 保存 Session 到文件
-def save_session_to_file(client, session_file):
+def save_session_to_file(client: TelegramClient, session_file):
     """
     将客户端的 Session 保存到文件
     """
     with open(session_file, 'w') as f:
         f.write(client.session.save())
     logging.info(f"Session 已保存到文件: {session_file}")
-    logging.info("保留好这个 session 字符串, 下次登录可以直接用这个字符串登录, 无需输入手机号和密码: \n", client.session.save())
+    logging.info(f"保留好这个 session 字符串, 下次登录可以直接用这个字符串登录, 无需输入手机号和密码: \n{client.session.save()}")
 
 # 登录逻辑
 async def login(api_id, api_hash, phone, password, key_folder, code_url, proxy=None):
