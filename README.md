@@ -1,4 +1,8 @@
 # Telegram
+```bash
+pip install -r requirements.txt
+```
+
 ```sh
 # 更改配置文件
 cp config/config.ini config/local.config.ini

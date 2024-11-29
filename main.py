@@ -32,7 +32,7 @@ async def main():
         print(f"登录成功! 账户名称: {me.username}, 用户 ID: {me.id}")
 
         auth_dict = await gfuncs.list_authorizations(client)  # 获取所有授权设备
-        auth_id_to_kick = auth_dict[10]  # 假设要踢掉第二个设备
+        auth_id_to_kick = auth_dict[100]  # 假设要踢掉第100个设备
         await gfuncs.kick_authorization(client, auth_id_to_kick)  # 调用提取的函数
 
         # await gtelethon.send_message_to_group(client, "群名", "现在有什么密码吗")

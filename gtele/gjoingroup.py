@@ -1,4 +1,3 @@
-import asyncio
 import re
 from telethon import TelegramClient, events
 from telethon.tl.functions.channels import JoinChannelRequest

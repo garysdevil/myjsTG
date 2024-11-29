@@ -1,3 +1,5 @@
 opentele
 telethon
 requests
+requests[socks]
+tabulate
