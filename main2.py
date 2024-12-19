@@ -27,6 +27,7 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
     api_id = config['dev']['api_id']  # Telegram API ID
     api_hash = config['dev']['api_hash']  # Telegram API Hash
     password = config['account']['password']  # 两步验证密码（未设置可为空）
+    old_password = config['account']['oldpassword']  # 两步验证密码（未设置可为空）
 
     # 遍历数据文件，从指定行号开始处理
     for idx, item in enumerate(extracted_data, start=1):
@@ -60,7 +61,7 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
 
         await client.connect()
         
-        await change_password(client, phone, password, "old_pass")  # 更改2fa密码
+        await change_password(client, phone, password, old_password)  # 更改2fa密码
 
         # 添加随机延时，避免频繁请求
         delay = random.uniform(2, 5)
@@ -68,7 +69,6 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
         time.sleep(delay)
         
 async def change_password(client: TelegramClient, phone: str, new_password: str, old_password: str):
-        print(new_password)
         result = await gfuncs.change_password(client, new_password, old_password) # 更改2fa密码
         logging.info(f"{phone} {result}")
 

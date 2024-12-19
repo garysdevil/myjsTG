@@ -13,6 +13,7 @@ def config():
     }
     account = {
         'password': config['account']['password'],
+        'oldpassword': config['account']['oldpassword'],
         'session_folder': config['account']['session_folder'],
         'session_new_folder': config['account']['session_new_folder'],
         'key_folder': config['account']['key_folder']
