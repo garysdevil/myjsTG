@@ -77,7 +77,7 @@ async def send_message_to_group(client: TelegramClient, group_username: str, mes
         print(f"发送消息失败: {e}")
 
 # 未测试
-async def subscribe_channel(client, target_channel):
+async def subscribe_channel(client: TelegramClient, target_channel):
     """
     使用提供的 TelegramClient 实例订阅指定频道。
 
@@ -120,3 +120,25 @@ async def subscribe_channel(client, target_channel):
         # 捕获其他异常
         print(f"订阅频道时发生错误: {e}")
         return {"status": "error", "error": str(e)}
+
+
+async def change_password(client: TelegramClient, new_password, old_password=None, hint="My new password hint"):
+    """
+    更改 Telegram 密码。
+    :param client: 已登录的 TelegramClient 实例。
+    :param new_password: 要设置的新密码。
+    :param old_password: 当前的旧密码（如果需要）。
+    :param hint: 新密码的提示。
+    """
+    try:
+        # Telethon 提供的 edit_2fa 方法直接更改密码
+        await client.edit_2fa(
+            current_password=old_password,  # 如果没有旧密码，请传递 None
+            new_password=new_password,     # 新密码
+            hint=hint                      # 密码提示
+        )
+        return "密码已成功更改。"
+    except errors.PasswordHashInvalidError:
+        return "旧密码不正确，请重试。"
+    except Exception as e:
+        return f"更改密码时出错: {e}"

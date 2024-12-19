@@ -1,75 +1,88 @@
-# source ~/devenv/python_tg/bin/activate 
-# pip install --upgrade opentele  # pip install PySocks 
-# 操作 客户端session文件
-
-from opentele.td import TDesktop
-from opentele.tl import TelegramClient
-from opentele.api import API, UseCurrentSession, CreateNewSession
+from telethon import TelegramClient
+from telethon.sessions import StringSession
 import asyncio
+import json
+import random
+import time
+from log import logging, error_logger  # 引入日志模块
 
-import gutils.gutils as gutils
-import gconfig.ginit as ginit
+from gconfig import ginit
+import gtele.gfuncs as gfuncs
+import gtele.gjoingroup as gjoingroup
+from gutils import gdata
 
+# 主程序逻辑
+async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1, end_line=None):
+    """
+    主程序：
+    1. 读取数据文件，获取账号和代理信息。
+    2. 循环处理每个账号，进行登录操作。
+    3. 随机延时，避免频繁请求导致封禁。
+    """
+    # 读取提取的数据
+    extracted_data = json.loads(gdata.get_extracted_data(data_file))
 
-async def main():
+    # 读取配置参数
     config = ginit.config()
-    password = config['telegram']['password']
+    api_id = config['dev']['api_id']  # Telegram API ID
+    api_hash = config['dev']['api_hash']  # Telegram API Hash
+    password = config['account']['password']  # 两步验证密码（未设置可为空）
+
+    # 遍历数据文件，从指定行号开始处理
+    for idx, item in enumerate(extracted_data, start=1):
+        if idx < start_line:
+            continue  # 跳过起始行号之前的行
+        
+        if end_line and idx > end_line:
+            logging.info(f"已达到终止行号 {end_line}，停止处理。")
+            break
+        
+        phone = item["phone"]
+        code_url = item["code_url"]
+        proxy = item["proxy"]
+        key_path = key_folder + f"/{phone}.session"
+
+        logging.info(f"\n[{idx}] 正在处理账号: {phone}，使用代理: {proxy}")
     
-    # 调用函数获取文件夹内所有的文件名
-    directory_path = config['telegram']['session_folder']  # 替换为你的文件夹路径
-    filename_list = gutils.list_files_in_directory(directory_path)
+        # 从文件读取已保存的 StringSession
+        with open(key_path, "r") as file:
+            session_str = file.read().strip()
 
-    filename = filename_list[0]
-    sessionPath = config['telegram']['session_folder'] + filename
-    newSessionPath  = config['telegram']['session_new_folder']  + filename
-    client = TelegramClient(sessionPath)
-    client.set_proxy(config['proxy'])
+        # 使用 StringSession 初始化 TelegramClient
+        client = TelegramClient(StringSession(session_str), api_id, api_hash)
 
-    print(filename)
-    # print(config['proxy'])
-    await client.connect()
-    await client.PrintSessions()
+        # 设置代理（如果有）
+        if proxy:
+            client.session.proxies = {
+                "http": proxy,
+                "https": proxy
+            }
 
-    # 生成一个新的 session
-    # await generateNewSession(client, newSessionPath, password)
+        await client.connect()
+        
+        await change_password(client, phone, password, "old_pass")  # 更改2fa密码
 
-# 测试失败
-async def generateNewSession(client: TelegramClient, newSessionPath, password):
-    newAPI = API.TelegramIOS.Generate()
-    newClient = await client.QRLoginToNewClient(newSessionPath, newAPI, password)
-    print(newClient)
+        # 添加随机延时，避免频繁请求
+        delay = random.uniform(2, 5)
+        logging.info(f"操作完成，延时 {delay:.2f} 秒后继续...")
+        time.sleep(delay)
+        
+async def change_password(client: TelegramClient, phone: str, new_password: str, old_password: str):
+        print(new_password)
+        result = await gfuncs.change_password(client, new_password, old_password) # 更改2fa密码
+        logging.info(f"{phone} {result}")
 
-# 测试失败
-async def deleteOldSession(client: TelegramClient, seq):
-    # 踢除之前的设备
-    await client.TerminateSession(seq) # 指定设备
-    # client.TerminateAllSessions() # 所有设备
-    
-async def transferSessionToTdata(sessionPath, tdataPath):
+# 命令行入口
+if __name__ == "__main__":
+    import argparse
 
-    # Load the client from telethon.session file
-    # We don't need to specify api, api_id or api_hash, it will use TelegramDesktop API by default.
-    client = TelegramClient(sessionPath)
-    
-    # flag=UseCurrentSession
-    #
-    # Convert Telethon to TDesktop using the current session.
-    tdesk = await client.ToTDesktop(flag=UseCurrentSession)
+    # 命令行参数解析
+    parser = argparse.ArgumentParser(description="Telegram 自动登录程序")
+    parser.add_argument('--data-file', type=str, default='local/data.txt', help="指定数据文件路径，默认为 'local/data.txt'")
+    parser.add_argument('--key-folder', type=str, default='local/keys', help="指定 Session 文件保存路径，默认为 'local/keys'")
+    parser.add_argument('--start-line', type=int, default=1, help="指定从哪一行开始处理")
+    parser.add_argument('--end-line', type=int, help="指定在某一行结束处理（可选，不指定则处理到文件结束）")
+    args = parser.parse_args()
 
-    # Save the session to a folder named "tdata"
-    tdesk.SaveTData(tdataPath)
-
-async def transferTdataToSession(sessionPath, tdataPath):
-    # Load TDesktop client from tdata folder
-    tdesk = TDesktop(tdataPath)
-    
-    # Check if we have loaded any accounts
-    assert tdesk.isLoaded()
-
-    # flag=UseCurrentSession
-    #
-    # Convert TDesktop to Telethon using the current session.
-    client = await tdesk.ToTelethon(session=sessionPath, flag=UseCurrentSession)
-
-
-asyncio.run(main())
+    # 异步运行主程序
+    asyncio.run(main(data_file=args.data_file, key_folder=args.key_folder, start_line=args.start_line, end_line=args.end_line))

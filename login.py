@@ -10,7 +10,7 @@ import json
 import time
 import random
 
-from gutils.gdata import get_extracted_data
+from gutils import gdata
 from gconfig import ginit
 from log import logging, error_logger  # 引入日志模块
 
@@ -24,7 +24,7 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
     3. 随机延时，避免频繁请求导致封禁。
     """
     # 读取提取的数据
-    extracted_data = json.loads(get_extracted_data(data_file))
+    extracted_data = json.loads(gdata.get_extracted_data(data_file))
 
     # 读取配置参数
     config = ginit.config()
