@@ -61,16 +61,15 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
 
         await client.connect()
         
-        await change_password(client, phone, password, old_password)  # 更改2fa密码
+        await change_password(client, password, old_password, phone)  # 更改2fa密码
 
         # 添加随机延时，避免频繁请求
         delay = random.uniform(2, 5)
         logging.info(f"操作完成，延时 {delay:.2f} 秒后继续...")
         time.sleep(delay)
         
-async def change_password(client: TelegramClient, phone: str, new_password: str, old_password: str):
-        result = await gfuncs.change_password(client, new_password, old_password) # 更改2fa密码
-        logging.info(f"{phone} {result}")
+async def change_password(client: TelegramClient, new_password: str, old_password: str, phone: str):
+        await gfuncs.change_password(client, new_password, old_password, phone) # 更改2fa密码
 
 # 命令行入口
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ from telethon.tl.functions.account import GetAuthorizationsRequest, ResetAuthori
 from tabulate import tabulate
 from telethon.tl.functions.channels import JoinChannelRequest
 import time
+from log import logging, error_logger
 
 async def list_authorizations(client: TelegramClient):
     """
@@ -46,15 +47,15 @@ async def kick_authorization(client: TelegramClient, auth_id):
         result = await client(ResetAuthorizationRequest(auth_id))
         # 检查操作结果
         if result:
-            print(f"已成功踢掉授权 ID 为 {auth_id} 的设备。")
+            logging.info(f"已成功踢掉授权 ID 为 {auth_id} 的设备。")
         else:
-            print(f"踢掉授权 ID {auth_id} 未成功，可能已经失效或不在登录列表中。")
+            logging.info(f"踢掉授权 ID {auth_id} 未成功，可能已经失效或不在登录列表中。")
     except errors.rpcerrorlist.AuthKeyUnregisteredError:
-        print(f"授权 ID {auth_id} 未注册或已无效。")
+        logging.error(f"授权 ID {auth_id} 未注册或已无效。")
     except errors.rpcerrorlist.FloodWaitError as e:
-        print(f"操作频繁，请等待 {e.seconds} 秒后重试。")
+        logging.error(f"操作频繁，请等待 {e.seconds} 秒后重试。")
     except Exception as e:
-        print(f"踢掉设备时出错: {e}")
+        logging.error(f"踢掉设备时出错: {e}")
 
 
 async def send_message_to_group(client: TelegramClient, group_username: str, message: str):
@@ -72,9 +73,9 @@ async def send_message_to_group(client: TelegramClient, group_username: str, mes
         
         # 发送消息
         await client.send_message(group, message)
-        print(f"消息已成功发送到群组: {group_username}")
+        logging.info(f"消息已成功发送到群组: {group_username}")
     except Exception as e:
-        print(f"发送消息失败: {e}")
+        logging.error(f"发送消息失败: {e}")
 
 # 未测试
 async def subscribe_channel(client: TelegramClient, target_channel):
@@ -98,31 +99,31 @@ async def subscribe_channel(client: TelegramClient, target_channel):
             raise RuntimeError("TelegramClient 未授权，请先登录。")
 
         # 尝试加入目标频道
-        print(f"正在尝试加入频道: {target_channel}")
+        logging.info(f"正在尝试加入频道: {target_channel}")
         result = await client(JoinChannelRequest(target_channel))
         channel_title = result.chats[0].title
-        print(f"成功加入频道: {channel_title}")
+        logging.info(f"成功加入频道: {channel_title}")
 
         return {"status": "success", "channel_title": channel_title}
     
     except errors.UserAlreadyParticipantError:
         # 已经加入频道的情况
-        print(f"您已经是频道 {target_channel} 的成员。")
+        logging.info(f"您已经是频道 {target_channel} 的成员。")
         return {"status": "already_joined", "channel_title": target_channel}
     
     except errors.FloodWaitError as e:
         # 处理 Flood Wait 限制
-        print(f"遭遇 Flood Wait 限制，请等待 {e.seconds} 秒后再试。")
+        logging.error(f"遭遇 Flood Wait 限制，请等待 {e.seconds} 秒后再试。")
         time.sleep(e.seconds)
         return {"status": "flood_wait", "wait_time": e.seconds}
     
     except Exception as e:
         # 捕获其他异常
-        print(f"订阅频道时发生错误: {e}")
+        logging.error(f"订阅频道时发生错误: {e}")
         return {"status": "error", "error": str(e)}
 
 
-async def change_password(client: TelegramClient, new_password, old_password=None, hint="My new password hint"):
+async def change_password(client: TelegramClient, new_password, old_password=None, phone=None, hint="My new password hint"):
     """
     更改 Telegram 密码。
     :param client: 已登录的 TelegramClient 实例。
@@ -137,8 +138,8 @@ async def change_password(client: TelegramClient, new_password, old_password=Non
             new_password=new_password,     # 新密码
             hint=hint                      # 密码提示
         )
-        return "密码已成功更改。"
+        logging.info(f"{phone} 密码已成功更改为 {new_password}")
     except errors.PasswordHashInvalidError:
-        return "旧密码不正确，请重试。"
+        logging.error(f"{phone} 旧密码 {old_password} 不正确，请重试。")
     except Exception as e:
-        return f"更改密码时出错: {e}"
+        logging.error(f"{phone} 更改密码时出错: {e}")
