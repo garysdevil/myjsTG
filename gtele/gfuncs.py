@@ -5,20 +5,20 @@ from telethon.tl.functions.channels import JoinChannelRequest
 import time
 from log import logging, error_logger
 
-async def list_authorizations(client: TelegramClient):
+async def list_authorizations(client: TelegramClient, print_table=True):
     """
     获取所有登录状态并以表格形式显示。
     返回一个字典，包含授权 ID 和对应的设备信息。
+    
+    参数:
+        client (TelegramClient): 已连接的 Telegram 客户端实例
+        print_table (bool): 是否打印表格，默认为 True
     """
     authorizations = await client(GetAuthorizationsRequest())
 
-    # 保存授权 ID 和设备信息
-    auth_dict = {}
-
     table_data = []
     for idx, auth in enumerate(authorizations.authorizations):
-        auth_id = auth.hash  # 获取授权 ID
-        auth_dict[idx] = auth_id  # 索引与授权 ID 映射
+        auth_id = auth.hash  # 获取授权ID
 
         # 添加表格行
         table_data.append([
@@ -34,10 +34,12 @@ async def list_authorizations(client: TelegramClient):
         ])
 
     # 打印表格
-    headers = ["序号", "auth_id", "设备类型", "平台", "系统版本", "IP 地址", "国家", "上次访问时间", "当前设备"]
-    print(tabulate(table_data, headers=headers, tablefmt="grid"))
+    if print_table:
+        headers = ["序号", "auth_id", "设备类型", "平台", "系统版本", "IP 地址", "国家", "上次访问时间", "当前设备"]
+        table = tabulate(table_data, headers=headers, tablefmt="grid")
+        logging.info(table)
 
-    return auth_dict
+    return table_data
 
 async def kick_authorization(client: TelegramClient, auth_id):
     """

@@ -31,7 +31,6 @@ async def main():
         me = await client.get_me()
         print(f"登录成功! 账户名称: {me.username}, 用户 ID: {me.id}")
         print(key_path)
-        print(password)
 
         # new_password = password
         # old_password = "test"

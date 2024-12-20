@@ -11,6 +11,13 @@ import gtele.gfuncs as gfuncs
 import gtele.gjoingroup as gjoingroup
 from gutils import gdata
 
+# 全局参数
+config = ginit.config()
+API_ID = config['dev']['api_id']  # Telegram API ID
+API_HASH = config['dev']['api_hash']  # Telegram API Hash
+PASSWORD = config['account']['password']  # 两步验证密码（未设置可为空）
+OLD_PASSWORD = config['account']['oldpassword']  # 两步验证密码（未设置可为空）
+
 # 主程序逻辑
 async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1, end_line=None):
     """
@@ -22,13 +29,6 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
     # 读取提取的数据
     extracted_data = json.loads(gdata.get_extracted_data(data_file))
 
-    # 读取配置参数
-    config = ginit.config()
-    api_id = config['dev']['api_id']  # Telegram API ID
-    api_hash = config['dev']['api_hash']  # Telegram API Hash
-    password = config['account']['password']  # 两步验证密码（未设置可为空）
-    old_password = config['account']['oldpassword']  # 两步验证密码（未设置可为空）
-
     # 遍历数据文件，从指定行号开始处理
     for idx, item in enumerate(extracted_data, start=1):
         if idx < start_line:
@@ -39,7 +39,6 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
             break
         
         phone = item["phone"]
-        code_url = item["code_url"]
         proxy = item["proxy"]
         key_path = key_folder + f"/{phone}.session"
 
@@ -50,7 +49,7 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
             session_str = file.read().strip()
 
         # 使用 StringSession 初始化 TelegramClient
-        client = TelegramClient(StringSession(session_str), api_id, api_hash)
+        client = TelegramClient(StringSession(session_str), API_ID, API_HASH)
 
         # 设置代理（如果有）
         if proxy:
@@ -61,15 +60,32 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
 
         await client.connect()
         
-        await change_password(client, password, old_password, phone)  # 更改2fa密码
-
-        # 添加随机延时，避免频繁请求
-        delay = random.uniform(2, 5)
-        logging.info(f"操作完成，延时 {delay:.2f} 秒后继续...")
-        time.sleep(delay)
+        await process_account(client, phone)  # 处理账号相关操作
         
+        await client.disconnect()
+        # 添加随机延时，避免频繁请求
+        # delay = random.uniform(2, 5)
+        # logging.info(f"操作完成，延时 {delay:.2f} 秒后继续...")
+        # time.sleep(delay)
+        
+async def process_account(client: TelegramClient, phone: str):
+    # await change_password(client, PASSWORD, OLD_PASSWORD, phone)  # 更改2fa密码
+    await remove_authorization(client)  # 移除TG厂商授权设备
+    await gfuncs.list_authorizations(client)
+
 async def change_password(client: TelegramClient, new_password: str, old_password: str, phone: str):
-        await gfuncs.change_password(client, new_password, old_password, phone) # 更改2fa密码
+    await gfuncs.change_password(client, new_password, old_password, phone) # 更改2fa密码
+
+
+async def remove_authorization(client: TelegramClient):
+    table = await gfuncs.list_authorizations(client, print_table=False)  # 获取所有授权设备
+    for row in table:
+        device_model = row[2]
+        auth_id = row[1]
+        # 根据设备类型进行踢掉设备
+        if "Desktop" in device_model or "Samsung Galaxy" in device_model or "Asus ROG Phone" in device_model:
+            print(f"踢掉设备：{device_model}")
+            await gfuncs.kick_authorization(client, auth_id)  # 调用提取的函数
 
 # 命令行入口
 if __name__ == "__main__":
