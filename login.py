@@ -11,7 +11,7 @@ import time
 import random
 
 from gutils import gdata
-from gconfig import ginit
+from myjsTG.gconfig import gconfig
 from log import logging, error_logger  # 引入日志模块
 
 
@@ -27,7 +27,7 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
     extracted_data = json.loads(gdata.get_extracted_data(data_file))
 
     # 读取配置参数
-    config = ginit.config()
+    config = config.config()
     api_id = config['dev']['api_id']  # Telegram API ID
     api_hash = config['dev']['api_hash']  # Telegram API Hash
     password = config['account']['password']  # 两步验证密码（未设置可为空）

@@ -8,11 +8,11 @@ from opentele.api import API, UseCurrentSession, CreateNewSession
 import asyncio
 
 import gutils.gutils as gutils
-import gconfig.ginit as ginit
+import myjsTG.gconfig.gconfig as gconfig
 
 
 async def main():
-    config = ginit.config()
+    config = config.config()
     password = config['telegram']['password']
     
     # 调用函数获取文件夹内所有的文件名

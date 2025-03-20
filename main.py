@@ -2,13 +2,13 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 import asyncio
 
-from gconfig import ginit
+from myjsTG.gconfig import gconfig
 import gtele.gfuncs as gfuncs
 import gtele.gjoingroup as gjoingroup
 
 # 主函数
 async def main():
-    config = ginit.config()
+    config = config.config()
     # 配置参数
     api_id = config['dev']['api_id']  # 替换为您的 API ID
     api_hash = config['dev']['api_hash']  # 替换为您的 API Hash

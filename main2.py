@@ -6,17 +6,17 @@ import random
 import time
 from log import logging, error_logger  # 引入日志模块
 
-from gconfig import ginit
+from myjsTG.gconfig import gconfig
 import gtele.gfuncs as gfuncs
 import gtele.gjoingroup as gjoingroup
 from gutils import gdata
 
 # 全局参数
-config = ginit.config()
-API_ID = config['dev']['api_id']  # Telegram API ID
-API_HASH = config['dev']['api_hash']  # Telegram API Hash
-PASSWORD = config['account']['password']  # 两步验证密码（未设置可为空）
-OLD_PASSWORD = config['account']['oldpassword']  # 两步验证密码（未设置可为空）
+gconfig = gconfig.config()
+API_ID = gconfig['dev']['api_id']  # Telegram API ID
+API_HASH = gconfig['dev']['api_hash']  # Telegram API Hash
+PASSWORD = gconfig['account']['password']  # 两步验证密码（未设置可为空）
+OLD_PASSWORD = gconfig['account']['oldpassword']  # 两步验证密码（未设置可为空）
 
 # 主程序逻辑
 async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1, end_line=None):
