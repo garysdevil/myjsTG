@@ -3,7 +3,10 @@ from telethon.tl.functions.account import GetAuthorizationsRequest, ResetAuthori
 from tabulate import tabulate
 from telethon.tl.functions.channels import JoinChannelRequest
 import time
-from log import logging, error_logger
+from utils import logger
+
+# 初始化 logger，默认同时输出到文件和控制台
+tg_logger = logger.get_logger('logger', to_console=True)
 
 async def list_authorizations(client: TelegramClient, print_table=True):
     """
@@ -37,7 +40,7 @@ async def list_authorizations(client: TelegramClient, print_table=True):
     if print_table:
         headers = ["序号", "auth_id", "设备类型", "平台", "系统版本", "IP 地址", "国家", "上次访问时间", "当前设备"]
         table = tabulate(table_data, headers=headers, tablefmt="grid")
-        logging.info(table)
+        tg_logger.info(table)
 
     return table_data
 
@@ -49,15 +52,15 @@ async def kick_authorization(client: TelegramClient, auth_id):
         result = await client(ResetAuthorizationRequest(auth_id))
         # 检查操作结果
         if result:
-            logging.info(f"已成功踢掉授权 ID 为 {auth_id} 的设备。")
+            tg_logger.info(f"已成功踢掉授权 ID 为 {auth_id} 的设备。")
         else:
-            logging.info(f"踢掉授权 ID {auth_id} 未成功，可能已经失效或不在登录列表中。")
+            tg_logger.info(f"踢掉授权 ID {auth_id} 未成功，可能已经失效或不在登录列表中。")
     except errors.rpcerrorlist.AuthKeyUnregisteredError:
-        logging.error(f"授权 ID {auth_id} 未注册或已无效。")
+        tg_logger.error(f"授权 ID {auth_id} 未注册或已无效。")
     except errors.rpcerrorlist.FloodWaitError as e:
-        logging.error(f"操作频繁，请等待 {e.seconds} 秒后重试。")
+        tg_logger.error(f"操作频繁，请等待 {e.seconds} 秒后重试。")
     except Exception as e:
-        logging.error(f"踢掉设备时出错: {e}")
+        tg_logger.error(f"踢掉设备时出错: {e}")
 
 
 async def send_message_to_group(client: TelegramClient, group_username: str, message: str):
@@ -75,9 +78,9 @@ async def send_message_to_group(client: TelegramClient, group_username: str, mes
         
         # 发送消息
         await client.send_message(group, message)
-        logging.info(f"消息已成功发送到群组: {group_username}")
+        tg_logger.info(f"消息已成功发送到群组: {group_username}")
     except Exception as e:
-        logging.error(f"发送消息失败: {e}")
+        tg_logger.error(f"发送消息失败: {e}")
 
 # 未测试
 async def subscribe_channel(client: TelegramClient, target_channel):
@@ -101,27 +104,27 @@ async def subscribe_channel(client: TelegramClient, target_channel):
             raise RuntimeError("TelegramClient 未授权，请先登录。")
 
         # 尝试加入目标频道
-        logging.info(f"正在尝试加入频道: {target_channel}")
+        tg_logger.info(f"正在尝试加入频道: {target_channel}")
         result = await client(JoinChannelRequest(target_channel))
         channel_title = result.chats[0].title
-        logging.info(f"成功加入频道: {channel_title}")
+        tg_logger.info(f"成功加入频道: {channel_title}")
 
         return {"status": "success", "channel_title": channel_title}
     
     except errors.UserAlreadyParticipantError:
         # 已经加入频道的情况
-        logging.info(f"您已经是频道 {target_channel} 的成员。")
+        tg_logger.info(f"您已经是频道 {target_channel} 的成员。")
         return {"status": "already_joined", "channel_title": target_channel}
     
     except errors.FloodWaitError as e:
         # 处理 Flood Wait 限制
-        logging.error(f"遭遇 Flood Wait 限制，请等待 {e.seconds} 秒后再试。")
+        tg_logger.error(f"遭遇 Flood Wait 限制，请等待 {e.seconds} 秒后再试。")
         time.sleep(e.seconds)
         return {"status": "flood_wait", "wait_time": e.seconds}
     
     except Exception as e:
         # 捕获其他异常
-        logging.error(f"订阅频道时发生错误: {e}")
+        tg_logger.error(f"订阅频道时发生错误: {e}")
         return {"status": "error", "error": str(e)}
 
 
@@ -140,8 +143,8 @@ async def change_password(client: TelegramClient, new_password, old_password=Non
             new_password=new_password,     # 新密码
             hint=hint                      # 密码提示
         )
-        logging.info(f"{phone} 密码已成功更改为 {new_password}")
+        tg_logger.info(f"{phone} 密码已成功更改为 {new_password}")
     except errors.PasswordHashInvalidError:
-        logging.error(f"{phone} 旧密码 {old_password} 不正确，请重试。")
+        tg_logger.error(f"{phone} 旧密码 {old_password} 不正确，请重试。")
     except Exception as e:
-        logging.error(f"{phone} 更改密码时出错: {e}")
+        tg_logger.error(f"{phone} 更改密码时出错: {e}")

@@ -1,87 +1,106 @@
 import json
+from typing import List, Dict, Optional
+from utils import logger
 
-def extract_data(line):
+# 初始化 logger，默认同时输出到文件和控制台
+logger = logger.get_logger('bit_log', to_console=True)
+
+def load_json(file_path: str) -> List[Dict]:
+    """加载 JSON 文件并返回数据列表"""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"File {file_path} must contain a list")
+            return data
+    except Exception as e:
+        logger.error(f"Error loading JSON file {file_path}: {str(e)}")
+        raise
+
+def get_login_data(telegram_file: str, proxy_file: str, seq_start: int, seq_end: int) -> List[Dict]:
     """
-    从每一行提取 phone, code_url, proxy 信息，并格式化 Proxy
-    """
-    parts = line.split()
-
-    # 检查基本字段数量是否符合要求
-    if len(parts) < 2:
-        print("分割后的结果不足2个部分, 检查输入数据。")
-        return None
-
-    phone = parts[0]
-    code_url = parts[1]
-    proxy = None  # 默认值为 None
-
-    # 如果提供了代理信息，尝试解析
-    if len(parts) >= 3:
-        proxy_raw = parts[2]
-        proxy_parts = proxy_raw.split(':')
-        if len(proxy_parts) == 4:
-            host, port, username, password = proxy_parts
-            proxy = f"socks5://{username}:{password}@{host}:{port}"
-        else:
-            print(f"Proxy 格式不正确: {proxy_raw}")
-            exit()
-
-    return {"phone": phone, "code_url": code_url, "proxy": proxy}
-
-def process_file(file_path):
-    """
-    处理文件，提取每行的 phone, code_url 和 proxy 信息，并附加序号
-    """
-    result = []
+    根据 seq 范围从 proxy.json 获取 seq 和 proxy，从 telegram.json 获取 phone 和 sessionstr，
+    生成新数组。
     
-    with open(file_path, 'r') as file:
-        for index, line in enumerate(file, start=1):
-            data = extract_data(line)
-            if data:
-                # 添加序号到结果
-                data["index"] = index
-                result.append(data)
+    Args:
+        proxy_file (str): proxy.json 文件路径
+        telegram_file (str): telegram.json 文件路径
+        seq_start (int): 起始 seq
+        seq_end (int): 结束 seq
     
-    return result
-
-def get_extracted_data(file_path):
+    Returns:
+        List[Dict]: 包含 seq, proxy, phone, sessionstr 的结果列表
+    
+    Raises:
+        Exception: 如果处理过程中出错
     """
-    对外暴露的接口：提取文件中的数据并返回 JSON 结构
-    """
-    data = process_file(file_path)
-    return json.dumps(data, indent=4, ensure_ascii=False)  # 返回格式化的 JSON 字符串
+    try:
+        # 加载数据
+        proxy_data = load_json(proxy_file)
+        telegram_data = load_json(telegram_file)
+        
+        # 创建 seq 到字段的映射
+        proxy_map: Dict[int, Optional[str]] = {item['seq']: item.get('proxy') for item in proxy_data if 'seq' in item}
+        telegram_map: Dict[int, Dict] = {
+            item['seq']: {'phone': item.get('phone'), 'sessionstr': item.get('sessionstr')}
+            for item in telegram_data if 'seq' in item
+        }
+        
+        # 组合匹配的数据并检查空字段
+        result = []
+        for seq in range(seq_start, seq_end + 1):
+            if seq in proxy_map and seq in telegram_map:
+                proxy = proxy_map[seq]
+                phone = telegram_map[seq]['phone']
+                sessionstr = telegram_map[seq]['sessionstr']
+                
+                # 检查并提示空字段
+                if proxy is None:
+                    logger.warning(f"'proxy' is empty for seq {seq} in {proxy_file}")
+                if phone is None:
+                    logger.warning(f"'phone' is empty for seq {seq} in {telegram_file}")
+                if sessionstr is None:
+                    logger.warning(f"'sessionstr' is empty for seq {seq} in {telegram_file}")
+                
+                result.append({
+                    'seq': seq,
+                    'proxy': proxy,
+                    'phone': phone,
+                    'sessionstr': sessionstr
+                })
+            else:
+                logger.error(f"No matching data for seq {seq} in one or both files")
+        
+        logger.info(f"Processed {len(result)} matching records from seq {seq_start} to {seq_end}")
+        return result
+    except Exception as e:
+        logger.error(f"Error processing Telegram data: {str(e)}")
+        raise
 
+def test_get_login_data():
+    # 示例文件
+    proxy_json = [
+        {"seq": 1, "proxy": "46.203.52.111:5722:user1:pass1"},
+        {"seq": 2, "proxy": "192.168.1.1:1080:user2:pass2"},
+        {"seq": 3, "proxy": None}  # 测试空值
+    ]
+    telegram_json = [
+        {"seq": 1, "phone": "+12345678901", "sessionstr": "session1"},
+        {"seq": 2, "phone": "+12345678902", "sessionstr": "session2"},
+        {"seq": 3, "phone": None, "sessionstr": "session3"}
+    ]
+    
+    # 保存到文件
+    with open("local/test_proxy.json", "w") as f:
+        json.dump(proxy_json, f)
+    with open("local/test_telegram.json", "w") as f:
+        json.dump(telegram_json, f)
+    
+    # 调用函数
+    result = get_login_data("telegram.json", "proxy.json", 1, 3)
+    for item in result:
+        print(item)
+
+# 测试代码
 if __name__ == "__main__":
-    # 文件路径
-    file_path = 'local/data.txt'  # 请确保文件路径正确
-
-    # 获取 JSON 数据并打印
-    json_data = get_extracted_data(file_path)
-    print(json_data)
-
-
-'''
-输入文件路径
-get_extracted_data(file_path)
-
-假设文件中的一行数据如下：
-12345678901 https://example.com/code 192.168.1.1:8080:username:password
-98765432100 https://example.com/code2 192.168.1.2:8081:user2:pass2
-
-
-返回的 JSON 格式字符串如下：
-[
-    {
-        "phone": "12345678901",
-        "code_url": "https://example.com/code",
-        "proxy": "socks5://username:password@192.168.1.1:8080",
-        "index": 1
-    },
-    {
-        "phone": "98765432100",
-        "code_url": "https://example.com/code2",
-        "proxy": "socks5://user2:pass2@192.168.1.2:8081",
-        "index": 2
-    }
-]
-'''
+    test_get_login_data()

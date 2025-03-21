@@ -54,13 +54,13 @@ def setup_logger(name: str, log_file: str = 'gdefault.log', to_console: bool = T
     
     return logger
 
-def get_logger(name: str = 'bit_log', 
+def get_logger(name: str = 'logger_tg', 
               log_file: str = datetime.now().strftime('%Y%m%d.log'), 
               to_console: bool = True) -> logging.Logger:
     """获取全局唯一的logger实例
     
     Args:
-        name: 日志记录器名称，默认为 'bit_log'
+        name: 日志记录器名称，默认为 'logger_tg'
         log_file: 日志文件名称，默认为当前日期格式 'YYYYMMDD.log' (如 '20250305.log')
         to_console: 是否同时输出到控制台，默认为 True
     
