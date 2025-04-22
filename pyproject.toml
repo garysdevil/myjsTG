@@ -1,0 +1,6 @@
+[tool.ruff]
+line-length = 120 
+target-version = "py312"
+
+[tool.ruff.format]
+quote-style = "double"  # 与 black 保持一致

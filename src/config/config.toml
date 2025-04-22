@@ -1,0 +1,14 @@
+[account]
+api_id = 12345
+api_hash = "your_api_hash"
+password = "your_password"
+oldpassword = "your_old_password"
+
+[task]
+group_link = ""
+
+[test]
+phone = "+1234567890"
+code_url = "https://example.com/code"
+proxy = "host:port:username:password"
+sessionstr = "session_name"

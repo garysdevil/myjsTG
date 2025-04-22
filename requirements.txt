@@ -2,3 +2,6 @@ opentele==1.15.1
 telethon==1.39.0
 requests[socks]==2.32.3
 tabulate
+
+ruff~=0.11.0
+pre-commit~=4.2.0

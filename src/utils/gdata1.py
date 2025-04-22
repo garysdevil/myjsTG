@@ -1,5 +1,6 @@
 import json
 
+
 def extract_data(line):
     """
     从每一行提取 phone, code_url, proxy 信息，并格式化 Proxy
@@ -18,7 +19,7 @@ def extract_data(line):
     # 如果提供了代理信息，尝试解析
     if len(parts) >= 3:
         proxy_raw = parts[2]
-        proxy_parts = proxy_raw.split(':')
+        proxy_parts = proxy_raw.split(":")
         if len(proxy_parts) == 4:
             host, port, username, password = proxy_parts
             proxy = f"socks5://{username}:{password}@{host}:{port}"
@@ -28,21 +29,23 @@ def extract_data(line):
 
     return {"phone": phone, "code_url": code_url, "proxy": proxy}
 
+
 def process_file(file_path):
     """
     处理文件，提取每行的 phone, code_url 和 proxy 信息，并附加序号
     """
     result = []
-    
-    with open(file_path, 'r') as file:
+
+    with open(file_path, "r") as file:
         for index, line in enumerate(file, start=1):
             data = extract_data(line)
             if data:
                 # 添加序号到结果
                 data["index"] = index
                 result.append(data)
-    
+
     return result
+
 
 def get_extracted_data(file_path):
     """
@@ -51,16 +54,17 @@ def get_extracted_data(file_path):
     data = process_file(file_path)
     return json.dumps(data, indent=4, ensure_ascii=False)  # 返回格式化的 JSON 字符串
 
+
 if __name__ == "__main__":
     # 文件路径
-    file_path = 'local/data.txt'  # 请确保文件路径正确
+    file_path = "local/data.txt"  # 请确保文件路径正确
 
     # 获取 JSON 数据并打印
     json_data = get_extracted_data(file_path)
     print(json_data)
 
 
-'''
+"""
 输入文件路径
 get_extracted_data(file_path)
 
@@ -84,4 +88,4 @@ get_extracted_data(file_path)
         "index": 2
     }
 ]
-'''
+"""

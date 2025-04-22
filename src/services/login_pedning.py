@@ -10,13 +10,15 @@ import json
 import time
 import random
 
-from gutils import gdata
-from myjsTG.gconfig import gconfig
-from log import logging, error_logger  # 引入日志模块
+from utils import logger
+from utils import gdata1
+from config import gconfig
+
+logging = logger.get_logger("main2", to_console=True)
 
 
 # 主程序逻辑
-async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1, end_line=None):
+async def main(data_file="local/data.txt", key_folder="local/keys", start_line=1, end_line=None):
     """
     主程序：
     1. 读取数据文件，获取账号和代理信息。
@@ -24,32 +26,31 @@ async def main(data_file='local/data.txt', key_folder='local/keys', start_line=1
     3. 随机延时，避免频繁请求导致封禁。
     """
     # 读取提取的数据
-    extracted_data = json.loads(gdata.get_extracted_data(data_file))
+    extracted_data = json.loads(gdata1.get_extracted_data(data_file))
 
     # 读取配置参数
-    config = config.config()
-    api_id = config['dev']['api_id']  # Telegram API ID
-    api_hash = config['dev']['api_hash']  # Telegram API Hash
-    password = config['account']['password']  # 两步验证密码（未设置可为空）
+    api_id = gconfig.account_api_id
+    api_hash = gconfig.account_api_hash
+    password = gconfig.account_password
 
     # 遍历数据文件，从指定行号开始处理
     for idx, item in enumerate(extracted_data, start=1):
         if idx < start_line:
             continue  # 跳过起始行号之前的行
-        
+
         if end_line and idx > end_line:
             logging.info(f"已达到终止行号 {end_line}，停止处理。")
             break
-        
+
         phone = item["phone"]
         code_url = item["code_url"]
         proxy = item["proxy"]
 
         logging.info(f"\n[{idx}] 正在处理账号: {phone}，使用代理: {proxy}")
-        
+
         # 调用登录逻辑
         await login(api_id, api_hash, phone, password, key_folder, code_url, proxy)
-        
+
         # 添加随机延时，避免频繁请求
         delay = random.uniform(2, 5)
         logging.info(f"操作完成，延时 {delay:.2f} 秒后继续...")
@@ -68,19 +69,16 @@ def get_code_from_url(url, proxy=None):
             userinfo, hostport = rest.split("@")
             username, password = userinfo.split(":")
             host, port = hostport.split(":")
-            
+
             # 对用户名和密码进行 URL 编码
             username = quote(username)
             password = quote(password)
-            
+
             # 构造新的代理 URL
             proxy = f"{scheme}://{username}:{password}@{host}:{port}"
 
         # 设置代理配置
-        proxies = {
-            "http": proxy,
-            "https": proxy
-        } if proxy else None
+        proxies = {"http": proxy, "https": proxy} if proxy else None
 
         # 请求验证码
         response = requests.get(url, proxies=proxies, timeout=10)
@@ -94,7 +92,7 @@ def get_code_from_url(url, proxy=None):
         else:
             logging.warning(f"请求验证码失败，状态码: {response.status_code}")
     except Exception as e:
-        error_logger.error(f"获取验证码时出错: {e}")
+        logging.error(f"获取验证码时出错: {e}")
 
     # 提供手动输入验证码的选项
     while True:
@@ -102,8 +100,9 @@ def get_code_from_url(url, proxy=None):
         if manual_code.strip():
             return manual_code
         print("验证码不能为空，请重新输入。")
-    
+
     # return None
+
 
 def ensure_key_folder_exists(key_folder):
     """
@@ -146,10 +145,10 @@ async def login_to_telegram(client: TelegramClient, phone, code_url, password, p
                     logging.info("两步验证启用，尝试使用密码登录...")
                     await client.sign_in(password=password)
                 else:
-                    error_logger.error("两步验证密码未提供，登录失败。")
+                    logging.error("两步验证密码未提供，登录失败。")
                     return False
         else:
-            error_logger.error("未获取到验证码，登录中止。")
+            logging.error("未获取到验证码，登录中止。")
             return False
     else:
         logging.info("用户已授权，无需重新登录。")
@@ -161,7 +160,7 @@ def save_session_to_file(client: TelegramClient, session_file):
     保存 Telegram 会话到文件。
     会话文件可用于下次直接登录，无需输入验证码或密码。
     """
-    with open(session_file, 'w') as f:
+    with open(session_file, "w") as f:
         f.write(client.session.save())
     logging.info(f"Session 已保存到文件: {session_file}")
     logging.info(f"保存的 Session 字符串为: \n{client.session.save()}")
@@ -182,10 +181,7 @@ async def login(api_id, api_hash, phone, password, key_folder, code_url, proxy=N
 
     # 设置代理（如果有）
     if proxy:
-        client.session.proxies = {
-            "http": proxy,
-            "https": proxy
-        }
+        client.session.proxies = {"http": proxy, "https": proxy}
 
     await client.connect()
 
@@ -202,11 +198,17 @@ if __name__ == "__main__":
 
     # 命令行参数解析
     parser = argparse.ArgumentParser(description="Telegram 自动登录程序")
-    parser.add_argument('--data-file', type=str, default='local/data.txt', help="指定数据文件路径，默认为 'local/data.txt'")
-    parser.add_argument('--key-folder', type=str, default='local/keys', help="指定 Session 文件保存路径，默认为 'local/keys'")
-    parser.add_argument('--start-line', type=int, default=1, help="指定从哪一行开始处理")
-    parser.add_argument('--end-line', type=int, help="指定在某一行结束处理（可选，不指定则处理到文件结束）")
+    parser.add_argument(
+        "--data-file", type=str, default="local/data.txt", help="指定数据文件路径，默认为 'local/data.txt'"
+    )
+    parser.add_argument(
+        "--key-folder", type=str, default="local/keys", help="指定 Session 文件保存路径，默认为 'local/keys'"
+    )
+    parser.add_argument("--start-line", type=int, default=1, help="指定从哪一行开始处理")
+    parser.add_argument("--end-line", type=int, help="指定在某一行结束处理（可选，不指定则处理到文件结束）")
     args = parser.parse_args()
 
     # 异步运行主程序
-    asyncio.run(main(data_file=args.data_file, key_folder=args.key_folder, start_line=args.start_line, end_line=args.end_line))
+    asyncio.run(
+        main(data_file=args.data_file, key_folder=args.key_folder, start_line=args.start_line, end_line=args.end_line)
+    )
