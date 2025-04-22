@@ -81,11 +81,11 @@ async def main():
         tg_manager = TGManager(api_id=api_id, api_hash=api_hash, session=session_str, proxy=proxy)
         result = await tg_manager.connect()
         if not result[0]:
-            gutils.write_file("local/joingroup.result", f"{seq}, {phone}, {result}")
+            gutils.write_file("logs/joingroup.result", f"{seq}, {phone}, {result}")
             continue
 
         result = await test_join_group(tg_manager)
-        gutils.write_file("local/joingroup.result", f"{seq}, {phone}, {result}")
+        gutils.write_file("logs/joingroup.result", f"{seq}, {phone}, {result}")
         logger_tg.info(f"{seq}, {phone}, {result}")
         await asyncio.sleep(random.randint(5, 10))
 

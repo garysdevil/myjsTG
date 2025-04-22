@@ -8,7 +8,13 @@ class TGManager:
     """Telegram 客户端管理类，负责创建和管理 TelegramClient 实例"""
 
     def __init__(
-        self, api_id: str, api_hash: str, session: str, proxy: Optional[Dict] = None, phone: Optional[str] = None
+        self,
+        api_id: str,
+        api_hash: str,
+        session: str,
+        proxy: Optional[Dict] = None,
+        phone: Optional[str] = None,
+        seq: Optional[str] = None,
     ):
         """
         初始化 TGManager 类
@@ -24,6 +30,7 @@ class TGManager:
         self.session = session
         self.proxy = proxy
         self.phone = phone
+        self.seq = seq
         self._client = self._create_client()
         self.logger = logger.get_logger("tg_listener", to_console=True)
 
