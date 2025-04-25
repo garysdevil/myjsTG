@@ -72,9 +72,9 @@ class TGManager:
             return False, "客户端启动失败"
 
         if not await self._client.is_user_authorized():
-            self.logger.warning("用户未授权，请检查 .session 文件或重新登录")
+            self.logger.warning("用户未认证，请检查 .session 文件或重新登录")
             await self._client.disconnect()
-            return False, "用户未授权"
+            return False, "用户未认证"
 
         self.logger.info("客户端已连接.")
         return True, "success"
